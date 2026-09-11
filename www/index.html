@@ -1,369 +1,866 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>بلیطی</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-    <style>
-        /* ... (تمام استایل‌های قبلی) ... */
-        /* استایل‌های جدید برای مدیریت سانس‌ها */
-        .session-list { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
-        .session-item { background:#fff; border:1px solid #e9edf2; border-radius:14px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; }
-        .session-item.active { border-color:#2563eb; background:#eff6ff; }
-        .session-item .info { flex:1; }
-        .session-item .name { font-weight:700; font-size:15px; }
-        .session-item .detail { font-size:12px; color:#64748b; margin-top:2px; }
-        .session-actions { display:flex; gap:6px; }
-        .lock-screen { position:fixed; inset:0; background:#0f172a; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; padding:20px; text-align:center; }
-        .lock-screen .lock-icon { font-size:64px; margin-bottom:20px; }
-        .lock-screen h2 { font-size:24px; margin-bottom:8px; }
-        .lock-screen p { font-size:14px; color:#94a3b8; margin-bottom:24px; }
-        .lock-screen input { width:100%; max-width:280px; padding:14px; border-radius:14px; border:1px solid #334155; background:#1e293b; color:#fff; font-size:18px; text-align:center; letter-spacing:6px; margin-bottom:16px; }
-        .lock-screen .btn { width:100%; max-width:280px; margin-bottom:10px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2563eb">
+<title>بلیطی</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://unpkg.com/@capacitor/core@6/dist/capacitor.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Tahoma,sans-serif;-webkit-tap-highlight-color:transparent}
+html,body{overscroll-behavior:none}
+body{background:#f5f7fa;color:#1e293b;padding:14px 12px 30px;min-height:100vh}
+.app-title{font-size:22px;font-weight:800;text-align:center;margin-bottom:16px;color:#0f172a;letter-spacing:-.3px}
+.app-title span{color:#2563eb}
+.tabs{display:flex;gap:4px;margin-bottom:16px;background:#e9edf2;border-radius:40px;padding:4px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{flex:1 0 auto;padding:9px 12px;border:none;border-radius:32px;background:transparent;font-size:13px;font-weight:600;color:#475569;cursor:pointer;transition:.2s;white-space:nowrap;min-width:70px}
+.tab-btn.active{background:#fff;color:#0f172a;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.tab-content{display:none;animation:fadeIn .25s ease}
+.tab-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card{background:#fff;border-radius:20px;padding:16px 14px;margin-bottom:14px;box-shadow:0 4px 12px rgba(0,0,0,.04);border:1px solid #eef2f6}
+.card h3{font-size:16px;margin-bottom:10px;color:#0f172a}
+.form-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.form-group{flex:1 0 calc(50% - 8px);min-width:120px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:#334155;margin-bottom:4px}
+.form-group input{width:100%;padding:10px 12px;border:1px solid #d1d9e6;border-radius:12px;font-size:14px;background:#fafcff;font-family:inherit}
+.form-group input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border:none;border-radius:40px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;background:#eef2f6;color:#1e293b;gap:5px;font-family:inherit}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-primary:active{background:#1d4ed8}
+.btn-success{background:#16a34a;color:#fff}
+.btn-success:active{background:#15803d}
+.btn-danger{background:#dc2626;color:#fff}
+.btn-outline{background:transparent;border:1px solid #d1d9e6}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-block{width:100%;justify-content:center}
+.btn:disabled{opacity:.5;pointer-events:none}
+.session-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.session-item{background:#fafcff;border:1.5px solid #e9edf2;border-radius:14px;padding:11px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.session-item.active{border-color:#2563eb;background:#eff6ff;box-shadow:0 2px 8px rgba(37,99,235,.15)}
+.session-item .info{flex:1;min-width:0}
+.session-item .name{font-weight:700;font-size:14px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.session-item .detail{font-size:11px;color:#64748b;margin-top:2px}
+.session-actions{display:flex;gap:4px;flex-shrink:0}
+.ticket-list{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.ticket-item{background:#fff;border:1px solid #e9edf2;border-radius:16px;padding:11px;display:flex;align-items:center;gap:10px}
+.ticket-item.checked{background:#f0fdf4;border-color:#86efac}
+.ticket-qr{flex-shrink:0;width:72px;height:72px;background:#fff;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid #eef2f6}
+.ticket-qr canvas{max-width:100%!important;max-height:100%!important;width:auto!important;height:auto!important}
+.ticket-info{flex:1;min-width:0}
+.ticket-info .name{font-weight:700;font-size:14px;color:#0f172a}
+.ticket-info .detail{font-size:12px;color:#475569;margin-top:2px}
+.ticket-info .status{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;margin-top:4px}
+.status-unchecked{background:#fef9c3;color:#854d0e}
+.status-checked{background:#bbf7d0;color:#166534}
+.ticket-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.stats{display:flex;justify-content:space-around;text-align:center;padding:8px 0}
+.stat-item{display:flex;flex-direction:column;gap:2px}
+.stat-number{font-size:26px;font-weight:800;color:#0f172a;line-height:1.1}
+.stat-number.checked{color:#16a34a}
+.stat-number.remain{color:#2563eb}
+.stat-label{font-size:11px;color:#64748b}
+.scanner-box{margin:10px 0;border-radius:16px;overflow:hidden;background:#0f172a;min-height:230px;position:relative}
+#reader{width:100%;min-height:230px}
+#reader video{border-radius:16px}
+.scan-result{margin-top:12px;padding:14px;border-radius:16px;background:#f1f5f9;border-right:5px solid #94a3b8;font-size:13px}
+.scan-result.success{background:#dcfce7;border-right-color:#22c55e}
+.scan-result.error{background:#fee2e2;border-right-color:#ef4444}
+.scan-result.duplicate{background:#fef9c3;border-right-color:#eab308}
+.result-row{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px}
+.result-icon{font-size:26px}
+.result-detail{font-size:14px;color:#1e293b;margin-top:6px;line-height:1.7}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;z-index:9999;padding:20px}
+.modal-overlay.show{display:flex}
+.modal-box{background:#fff;border-radius:24px;padding:24px 20px;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal-box h3{font-size:18px;margin-bottom:6px}
+.modal-box p{font-size:13px;color:#475569;margin-bottom:14px;line-height:1.5}
+.modal-box input{width:100%;padding:12px;border:1px solid #d1d9e6;border-radius:12px;font-size:16px;text-align:center;letter-spacing:4px;margin-bottom:14px;font-family:inherit}
+.modal-box .btn-group{display:flex;gap:8px}
+.modal-box .btn-group .btn{flex:1}
+.lock-screen{position:fixed;inset:0;background:linear-gradient(135deg,#1e293b,#0f172a);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center}
+.lock-icon{font-size:64px;margin-bottom:16px;filter:drop-shadow(0 4px 16px rgba(37,99,235,.4))}
+.lock-screen h2{font-size:26px;margin-bottom:6px;font-weight:800}
+.lock-screen h2 span{color:#60a5fa}
+.lock-screen p{font-size:13px;color:#94a3b8;margin-bottom:28px;line-height:1.5}
+.lock-screen input{width:100%;max-width:280px;padding:13px;border-radius:14px;border:1.5px solid #334155;background:#1e293b;color:#fff;font-size:18px;text-align:center;letter-spacing:6px;margin-bottom:12px;font-family:inherit}
+.lock-screen input:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+.lock-screen .btn{width:100%;max-width:280px;margin-bottom:8px;padding:12px}
+.lock-biometric{background:#2563eb;color:#fff}
+.lock-biometric:active{background:#1d4ed8}
+.lock-password{background:transparent;border:1.5px solid #334155;color:#e2e8f0}
+.lock-hint{font-size:11px;color:#64748b;margin-top:14px}
+.about-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eef2f6;font-size:13px;align-items:center}
+.about-row:last-child{border-bottom:none}
+.about-row .label{color:#64748b;font-weight:500}
+.about-row .value{color:#0f172a;font-weight:600;text-align:left;direction:ltr}
+.about-row a{color:#2563eb;text-decoration:none}
+.empty-msg{text-align:center;color:#94a3b8;padding:20px 10px;font-size:13px;line-height:1.6}
+.notification{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 18px;border-radius:30px;font-size:13px;font-weight:600;z-index:999999;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:notifIn .3s ease;max-width:90%}
+@keyframes notifIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@media print{body *{visibility:hidden}.print-area,.print-area *{visibility:visible}.print-area{position:absolute;left:0;top:0;width:100%;padding:16px}.no-print{display:none!important}.ticket-item{break-inside:avoid;border:1px solid #ccc;margin-bottom:8px}}
+@media(max-width:480px){.form-group{flex:1 0 100%}.ticket-item{flex-wrap:wrap}.ticket-actions{flex-direction:row;width:100%;justify-content:flex-end}}
+</style>
 </head>
 <body>
-    <!-- صفحه قفل -->
-    <div id="lockScreen" class="lock-screen">
-        <div class="lock-icon">🔐</div>
-        <h2>بلیطی</h2>
-        <p>برای ورود، اثر انگشت یا رمز عبور را وارد کنید</p>
-        <button class="btn btn-primary" id="btnBiometric">👆 ورود با اثر انگشت</button>
-        <input type="password" id="lockPassword" placeholder="رمز عبور" maxlength="6">
-        <button class="btn btn-outline" id="btnPasswordLogin">ورود با رمز</button>
+
+<!-- صفحه قفل -->
+<div id="lockScreen" class="lock-screen">
+    <div class="lock-icon">🔐</div>
+    <h2>بلیط<span>ی</span></h2>
+    <p>برای ورود، از اثر انگشت یا رمز عبور استفاده کنید</p>
+    <button class="btn lock-biometric" id="btnBiometric" style="display:none">👆 ورود با اثر انگشت</button>
+    <input type="password" id="lockPassword" placeholder="• • • •" maxlength="8" inputmode="numeric">
+    <button class="btn lock-password" id="btnPasswordLogin">ورود با رمز عبور</button>
+    <div class="lock-hint">رمز پیش‌فرض: 1234</div>
+</div>
+
+<!-- اپلیکیشن اصلی -->
+<div id="mainApp" style="display:none">
+    <div class="app-title">🎫 بلیط<span>ی</span></div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="sessions">🎬 سانس‌ها</button>
+        <button class="tab-btn" data-tab="register">📝 ثبت بلیط</button>
+        <button class="tab-btn" data-tab="check">✅ چک بلیط</button>
+        <button class="tab-btn" data-tab="about">ℹ️ درباره</button>
     </div>
 
-    <!-- محتوای اصلی -->
-    <div id="mainApp" style="display:none;">
-        <!-- ... (تمام محتوای قبلی: تب ثبت، تب چک، مودال حذف) ... -->
-        
-        <!-- تب ثبت با مدیریت سانس -->
-        <div id="tab-register" class="tab-content active">
-            <!-- انتخاب/ایجاد سانس -->
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <h3 style="font-size:17px;">🎬 سانس‌ها</h3>
-                    <button class="btn btn-sm btn-primary" id="btnNewSession">+ سانس جدید</button>
-                </div>
-                <div id="sessionList" class="session-list"></div>
+    <!-- تب سانس‌ها -->
+    <div id="tab-sessions" class="tab-content active">
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <h3>🎬 مدیریت سانس‌ها</h3>
+                <button class="btn btn-sm btn-primary" id="btnNewSession">+ سانس جدید</button>
             </div>
-            
-            <!-- فرم ثبت بلیط (فقط وقتی سانس انتخاب شده) -->
-            <div class="card" id="ticketFormCard" style="display:none;">
-                <h3 style="margin-bottom:12px; font-size:17px;">ثبت بلیط در سانس: <span id="currentSessionName"></span></h3>
-                <div class="form-row">
-                    <div class="form-group"><label>نام خریدار</label><input type="text" id="inputName" placeholder="مثال: علی محمدی"></div>
-                    <div class="form-group"><label>تعداد بلیط</label><input type="number" id="inputCount" value="1" min="1"></div>
-                    <div class="form-group"><label>ردیف</label><input type="text" id="inputRow" placeholder="مثال: A"></div>
-                    <div class="form-group"><label>شماره صندلی</label><input type="text" id="inputSeat" placeholder="مثال: 12"></div>
-                </div>
-                <button class="btn btn-primary btn-block" id="btnAddTicket">➕ ثبت بلیط</button>
+            <div id="sessionList" class="session-list"></div>
+        </div>
+    </div>
+
+    <!-- تب ثبت بلیط -->
+    <div id="tab-register" class="tab-content">
+        <div class="card" id="noSessionMsg">
+            <div class="empty-msg">⚠️ ابتدا از تب «سانس‌ها» یک سانس ایجاد یا انتخاب کنید.</div>
+        </div>
+
+        <div class="card" id="ticketFormCard" style="display:none">
+            <h3>ثبت بلیط در سانس: <span id="currentSessionName" style="color:#2563eb"></span></h3>
+            <div class="form-row" style="margin-top:10px">
+                <div class="form-group"><label>نام خریدار</label><input type="text" id="inputName" placeholder="مثال: علی محمدی"></div>
+                <div class="form-group"><label>تعداد بلیط</label><input type="number" id="inputCount" value="1" min="1"></div>
+                <div class="form-group"><label>ردیف</label><input type="text" id="inputRow" placeholder="مثال: A"></div>
+                <div class="form-group"><label>شماره صندلی</label><input type="text" id="inputSeat" placeholder="مثال: 12"></div>
             </div>
-            
-            <!-- لیست بلیط‌های سانس جاری -->
-            <div class="card print-area" id="ticketListCard" style="display:none;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-                    <h3 style="font-size:17px;">لیست بلیط‌ها (<span id="ticketCount">0</span>)</h3>
-                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                        <button class="btn btn-sm btn-outline no-print" id="btnPrint">🖨 چاپ</button>
-                        <button class="btn btn-sm btn-outline no-print" id="btnExport">📤 خروجی</button>
-                        <button class="btn btn-sm btn-danger no-print" id="btnDeleteAll">🗑 حذف کل</button>
-                    </div>
+            <button class="btn btn-primary btn-block" id="btnAddTicket">➕ ثبت بلیط</button>
+        </div>
+
+        <div class="card print-area" id="ticketListCard" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+                <h3 style="margin:0">لیست بلیط‌ها (<span id="ticketCount">0</span>)</h3>
+                <div style="display:flex;gap:5px;flex-wrap:wrap" class="no-print">
+                    <button class="btn btn-sm btn-outline" id="btnPrint">🖨 چاپ</button>
+                    <button class="btn btn-sm btn-outline" id="btnExport">📤 CSV</button>
+                    <button class="btn btn-sm btn-danger" id="btnDeleteAll">🗑 حذف کل</button>
                 </div>
-                <div id="ticketListContainer" class="ticket-list" style="margin-top:12px;"></div>
+            </div>
+            <div id="ticketListContainer" class="ticket-list"></div>
+        </div>
+    </div>
+
+    <!-- تب چک بلیط -->
+    <div id="tab-check" class="tab-content">
+        <div class="card">
+            <div class="stats">
+                <div class="stat-item"><span class="stat-number" id="statTotal">0</span><span class="stat-label">کل بلیط</span></div>
+                <div class="stat-item"><span class="stat-number checked" id="statChecked">0</span><span class="stat-label">چک شده</span></div>
+                <div class="stat-item"><span class="stat-number remain" id="statRemain">0</span><span class="stat-label">باقیمانده</span></div>
             </div>
         </div>
-        
-        <!-- تب چک (بدون تغییر نسبت به نسخه قبل) -->
-        <!-- ... -->
+
+        <div class="card">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+                <button class="btn btn-primary" id="btnRequestPermission">📸 دسترسی دوربین</button>
+                <button class="btn btn-success" id="btnStartScanner" disabled>▶️ شروع اسکن</button>
+                <button class="btn btn-outline" id="btnStopScanner" disabled>⏹ توقف</button>
+            </div>
+            <div class="scanner-box"><div id="reader"></div></div>
+            <div id="scanResult" class="scan-result"><span style="color:#94a3b8">نتیجه اسکن در اینجا نمایش داده می‌شود</span></div>
+        </div>
     </div>
 
-    <script type="module">
-        import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-        import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
+    <!-- تب درباره -->
+    <div id="tab-about" class="tab-content">
+        <div class="card" style="text-align:center">
+            <div style="font-size:56px;margin-bottom:8px">🎫</div>
+            <div style="font-size:24px;font-weight:800;color:#0f172a">بلیط<span style="color:#2563eb">ی</span></div>
+            <div style="font-size:12px;color:#64748b;margin-top:4px">نسخه 2.0.1</div>
+        </div>
+        <div class="card">
+            <div class="about-row"><span class="label">طراح و برنامه‌نویس</span><span class="value">وحید سید معصومی</span></div>
+            <div class="about-row"><span class="label">📱 تلفن</span><span class="value"><a href="tel:09148043312">09148043312</a></span></div>
+            <div class="about-row"><span class="label">✉️ ایمیل</span><span class="value"><a href="mailto:masoomi.vahid@gmail.com">masoomi.vahid@gmail.com</a></span></div>
+            <div class="about-row"><span class="label">🌐 وب‌سایت</span><span class="value"><a href="https://www.DigitalSamaneh.ir" target="_blank">DigitalSamaneh.ir</a></span></div>
+            <div class="about-row"><span class="label">💬 تلگرام</span><span class="value"><a href="https://t.me/vahidmsm" target="_blank">@vahidmsm</a></span></div>
+            <div class="about-row"><span class="label">📷 اینستاگرام</span><span class="value"><a href="https://instagram.com/masoomi.vahid" target="_blank">@masoomi.vahid</a></span></div>
+        </div>
+        <div class="card" style="text-align:center;font-size:12px;color:#94a3b8;line-height:1.7">
+            © 1404 - تمامی حقوق محفوظ است<br>ساخته شده با ❤️ در ایران
+        </div>
+    </div>
+</div>
 
-        // ==================== متغیرها ====================
-        let sessions = [];          // آرایه سانس‌ها
-        let currentSessionId = null;
-        let tickets = [];           // بلیط‌های سانس جاری
-        const STORAGE_KEY = 'biliti_data.json';
-        let hasPermission = false;
-        let html5QrCode = null;
-        let isScanning = false;
+<!-- مودال حذف -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-box">
+        <h3>⚠️ حذف کامل اطلاعات</h3>
+        <p>برای حذف تمام بلیط‌های سانس جاری، رمز عبور را وارد کنید.</p>
+        <input type="password" id="deletePassword" placeholder="رمز عبور" maxlength="10" inputmode="numeric">
+        <div class="btn-group">
+            <button class="btn btn-outline" id="modalCancel">لغو</button>
+            <button class="btn btn-danger" id="modalConfirm">حذف همه</button>
+        </div>
+    </div>
+</div>
 
-        // ==================== ذخیره‌سازی ====================
-        async function saveData() {
-            const data = { sessions, currentSessionId, tickets, version: 1 };
-            try {
-                await Filesystem.writeFile({
-                    path: STORAGE_KEY,
-                    data: JSON.stringify(data),
-                    directory: Directory.Data,
-                    encoding: Encoding.UTF8
+<script>
+(function(){
+'use strict';
+
+// ===== دسترسی به Capacitor Plugins =====
+var Cap = window.Capacitor || {};
+var CapPlugins = Cap.Plugins || {};
+var Filesystem = CapPlugins.Filesystem;
+var BiometricAuth = CapPlugins.BiometricAuth;
+
+// ===== متغیرهای سراسری =====
+var sessions = [];
+var currentSessionId = null;
+var tickets = [];
+var STORAGE_FILE = 'biliti_data.json';
+var APP_PASSWORD = '1234';
+var hasPermission = false;
+var html5QrCode = null;
+var isScanning = false;
+
+// ===== توابع کمکی =====
+function escapeHtml(str){
+    if(!str) return '';
+    var d=document.createElement('div');
+    d.textContent=str;
+    return d.innerHTML;
+}
+function notify(msg, ms){
+    ms = ms || 2000;
+    var n = document.createElement('div');
+    n.className = 'notification';
+    n.textContent = msg;
+    document.body.appendChild(n);
+    setTimeout(function(){ n.style.opacity='0'; n.style.transition='opacity .3s'; setTimeout(function(){ n.remove(); }, 300); }, ms);
+}
+function generateId(prefix){
+    return (prefix||'id') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+}
+
+// ===== ذخیره‌سازی =====
+function saveData(){
+    var data = { sessions: sessions, currentSessionId: currentSessionId, version: 2 };
+    // تلاش اول: Filesystem
+    if(Filesystem && Filesystem.writeFile){
+        Filesystem.writeFile({
+            path: STORAGE_FILE,
+            data: JSON.stringify(data),
+            directory: 'DATA',
+            encoding: 'utf8'
+        }).catch(function(e){
+            console.warn('Filesystem write failed:', e);
+            try{ localStorage.setItem('biliti_backup', JSON.stringify(data)); }catch(err){}
+        });
+    } else {
+        try{ localStorage.setItem('biliti_backup', JSON.stringify(data)); }catch(err){}
+    }
+    // همیشه بکاپ در localStorage
+    try{ localStorage.setItem('biliti_backup', JSON.stringify(data)); }catch(err){}
+}
+
+function loadData(callback){
+    function finish(data){
+        sessions = (data && data.sessions) || [];
+        currentSessionId = (data && data.currentSessionId) || null;
+        var cur = sessions.find(function(s){ return s.id === currentSessionId; });
+        tickets = (cur && cur.tickets) || [];
+        if(callback) callback();
+    }
+    if(Filesystem && Filesystem.readFile){
+        Filesystem.readFile({
+            path: STORAGE_FILE,
+            directory: 'DATA',
+            encoding: 'utf8'
+        }).then(function(result){
+            try{
+                var data = JSON.parse(result.data);
+                finish(data);
+            }catch(e){
+                try{
+                    var backup = JSON.parse(localStorage.getItem('biliti_backup') || '{}');
+                    finish(backup);
+                }catch(err){ finish({}); }
+            }
+        }).catch(function(e){
+            try{
+                var backup = JSON.parse(localStorage.getItem('biliti_backup') || '{}');
+                finish(backup);
+            }catch(err){ finish({}); }
+        });
+    } else {
+        try{
+            var backup = JSON.parse(localStorage.getItem('biliti_backup') || '{}');
+            finish(backup);
+        }catch(err){ finish({}); }
+    }
+}
+
+// ===== رندر سانس‌ها =====
+function renderSessions(){
+    var container = document.getElementById('sessionList');
+    if(!sessions.length){
+        container.innerHTML = '<div class="empty-msg">هنوز سانسی ایجاد نشده است.<br>برای شروع، روی «+ سانس جدید» بزنید.</div>';
+        return;
+    }
+    var html = '';
+    sessions.forEach(function(s){
+        var isActive = (s.id === currentSessionId);
+        var ticketCount = (s.tickets && s.tickets.length) || 0;
+        html += '<div class="session-item '+(isActive?'active':'')+'" data-id="'+s.id+'">';
+        html += '<div class="info">';
+        html += '<div class="name">'+(isActive?'✅ ':'')+escapeHtml(s.name)+'</div>';
+        html += '<div class="detail">'+ticketCount+' بلیط | '+escapeHtml(s.date||'')+'</div>';
+        html += '</div>';
+        html += '<div class="session-actions">';
+        if(!isActive){
+            html += '<button class="btn btn-sm btn-primary select-session" data-id="'+s.id+'">انتخاب</button>';
+        }
+        html += '<button class="btn btn-sm btn-danger delete-session" data-id="'+s.id+'">🗑</button>';
+        html += '</div></div>';
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('.select-session').forEach(function(btn){
+        btn.addEventListener('click', function(){ selectSession(this.dataset.id); });
+    });
+    container.querySelectorAll('.delete-session').forEach(function(btn){
+        btn.addEventListener('click', function(){ deleteSession(this.dataset.id); });
+    });
+}
+
+function createSession(){
+    var name = prompt('نام سانس را وارد کنید (مثال: سانس عصر، اکران ویژه)');
+    if(!name || !name.trim()) return;
+    var session = {
+        id: generateId('sess'),
+        name: name.trim(),
+        date: new Date().toLocaleDateString('fa-IR'),
+        tickets: [],
+        createdAt: Date.now()
+    };
+    sessions.push(session);
+    saveData();
+    renderSessions();
+    selectSession(session.id);
+    notify('سانس «'+session.name+'» ایجاد شد');
+}
+
+function deleteSession(id){
+    var session = sessions.find(function(s){ return s.id === id; });
+    if(!session) return;
+    if(!confirm('سانس «'+session.name+'» و تمام بلیط‌های آن حذف شود؟')) return;
+    sessions = sessions.filter(function(s){ return s.id !== id; });
+    if(currentSessionId === id){
+        currentSessionId = null;
+        tickets = [];
+    }
+    saveData();
+    renderSessions();
+    refreshRegisterTab();
+    updateStats();
+    notify('سانس حذف شد');
+}
+
+function selectSession(id){
+    var session = sessions.find(function(s){ return s.id === id; });
+    if(!session) return;
+    currentSessionId = id;
+    tickets = session.tickets || [];
+    saveData();
+    renderSessions();
+    refreshRegisterTab();
+    updateStats();
+    switchTab('register');
+}
+
+function refreshRegisterTab(){
+    var formCard = document.getElementById('ticketFormCard');
+    var listCard = document.getElementById('ticketListCard');
+    var noMsg = document.getElementById('noSessionMsg');
+    if(!currentSessionId){
+        formCard.style.display = 'none';
+        listCard.style.display = 'none';
+        noMsg.style.display = 'block';
+        return;
+    }
+    var session = sessions.find(function(s){ return s.id === currentSessionId; });
+    if(!session){
+        formCard.style.display = 'none';
+        listCard.style.display = 'none';
+        noMsg.style.display = 'block';
+        return;
+    }
+    noMsg.style.display = 'none';
+    formCard.style.display = 'block';
+    listCard.style.display = 'block';
+    document.getElementById('currentSessionName').textContent = session.name;
+    renderTicketList();
+}
+
+// ===== رندر لیست بلیط =====
+function renderTicketList(){
+    var container = document.getElementById('ticketListContainer');
+    document.getElementById('ticketCount').textContent = tickets.length;
+    if(!tickets.length){
+        container.innerHTML = '<div class="empty-msg">هیچ بلیطی ثبت نشده است</div>';
+        return;
+    }
+    var html = '';
+    tickets.forEach(function(t){
+        var checkedClass = t.checked ? 'checked' : '';
+        var statusText = t.checked ? 'چک شده' : 'چک نشده';
+        var statusClass = t.checked ? 'status-checked' : 'status-unchecked';
+        html += '<div class="ticket-item '+checkedClass+'" data-id="'+t.id+'">';
+        html += '<div class="ticket-qr" id="qr-'+t.id+'"></div>';
+        html += '<div class="ticket-info">';
+        html += '<div class="name">'+escapeHtml(t.name||'بی‌نام')+'</div>';
+        html += '<div class="detail">تعداد: '+(t.ticketCount||1)+' | ردیف: '+escapeHtml(t.row||'-')+' | صندلی: '+escapeHtml(t.seatNumber||'-')+'</div>';
+        html += '<span class="status '+statusClass+'">'+statusText+'</span>';
+        html += '</div>';
+        html += '<div class="ticket-actions no-print">';
+        html += '<button class="btn btn-sm btn-outline share-btn" data-id="'+t.id+'">📤</button>';
+        html += '</div></div>';
+    });
+    container.innerHTML = html;
+
+    // ساخت QR
+    tickets.forEach(function(t){
+        var qrDiv = document.getElementById('qr-'+t.id);
+        if(qrDiv){
+            qrDiv.innerHTML = '';
+            try{
+                new QRCode(qrDiv, {
+                    text: t.id,
+                    width: 300,
+                    height: 300,
+                    colorDark: '#0f172a',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
                 });
-            } catch(e) {
-                // fallback به localStorage
-                localStorage.setItem('biliti_backup', JSON.stringify(data));
-                console.warn('Filesystem write failed, using localStorage:', e);
+            }catch(e){ qrDiv.textContent = '⚠️'; }
+        }
+    });
+
+    document.querySelectorAll('.share-btn').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+            e.stopPropagation();
+            shareTicket(this.dataset.id);
+        });
+    });
+}
+
+// ===== افزودن بلیط =====
+function addTicket(){
+    if(!currentSessionId){ alert('ابتدا یک سانس انتخاب کنید'); return; }
+    var name = document.getElementById('inputName').value.trim();
+    var count = parseInt(document.getElementById('inputCount').value) || 1;
+    var row = document.getElementById('inputRow').value.trim();
+    var seat = document.getElementById('inputSeat').value.trim();
+    if(!name){ alert('نام خریدار را وارد کنید'); document.getElementById('inputName').focus(); return; }
+    var ticket = {
+        id: generateId('tkt'),
+        name: name,
+        ticketCount: count,
+        row: row || '-',
+        seatNumber: seat || '-',
+        checked: false,
+        createdAt: Date.now()
+    };
+    tickets.push(ticket);
+    var session = sessions.find(function(s){ return s.id === currentSessionId; });
+    if(session) session.tickets = tickets;
+    saveData();
+    renderTicketList();
+    updateStats();
+    renderSessions();
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputCount').value = '1';
+    document.getElementById('inputRow').value = '';
+    document.getElementById('inputSeat').value = '';
+    document.getElementById('inputName').focus();
+    notify('بلیط ثبت شد');
+}
+
+// ===== اشتراک‌گذاری =====
+function shareTicket(id){
+    var ticket = tickets.find(function(t){ return t.id === id; });
+    if(!ticket){ notify('بلیط یافت نشد'); return; }
+    var tempDiv = document.createElement('div');
+    tempDiv.style.cssText = 'position:absolute;left:-9999px;top:-9999px';
+    document.body.appendChild(tempDiv);
+    try{
+        new QRCode(tempDiv, {
+            text: ticket.id,
+            width: 2000,
+            height: 2000,
+            colorDark: '#0f172a',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }catch(e){
+        document.body.removeChild(tempDiv);
+        notify('خطا در تولید QR');
+        return;
+    }
+    var canvas = tempDiv.querySelector('canvas');
+    if(!canvas){
+        document.body.removeChild(tempDiv);
+        notify('تصویر QR تولید نشد');
+        return;
+    }
+    var textInfo = '🎫 بلیط\n' +
+        'سانس: ' + (sessions.find(function(s){ return s.id === currentSessionId; })||{}).name + '\n' +
+        'نام: ' + (ticket.name || 'بی‌نام') + '\n' +
+        'تعداد: ' + (ticket.ticketCount || 1) + '\n' +
+        'ردیف: ' + (ticket.row || '-') + '\n' +
+        'صندلی: ' + (ticket.seatNumber || '-') + '\n' +
+        'وضعیت: ' + (ticket.checked ? 'چک شده' : 'چک نشده');
+
+    if(navigator.share && canvas.toBlob){
+        canvas.toBlob(function(blob){
+            document.body.removeChild(tempDiv);
+            if(!blob){ fallbackShare(textInfo); return; }
+            var file = new File([blob], 'ticket-qr.png', { type: 'image/png' });
+            navigator.share({ title: 'بلیط', text: textInfo, files: [file] })
+                .catch(function(err){ if(err.name !== 'AbortError') fallbackShare(textInfo); });
+        }, 'image/png');
+    } else {
+        document.body.removeChild(tempDiv);
+        fallbackShare(textInfo);
+    }
+}
+
+function fallbackShare(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){ notify('اطلاعات کپی شد'); }).catch(function(){ prompt('کپی کنید:', text); });
+    } else {
+        prompt('کپی کنید:', text);
+    }
+}
+
+// ===== حذف کامل =====
+function openDeleteModal(){
+    var modal = document.getElementById('deleteModal');
+    var input = document.getElementById('deletePassword');
+    modal.classList.add('show');
+    input.value = '';
+    setTimeout(function(){ input.focus(); }, 100);
+}
+
+function confirmDeleteAll(){
+    var input = document.getElementById('deletePassword');
+    if(input.value.trim() !== APP_PASSWORD){
+        notify('رمز اشتباه است');
+        input.value = '';
+        input.focus();
+        return;
+    }
+    if(!confirm('آیا از حذف تمام بلیط‌های این سانس مطمئن هستید؟')) return;
+    tickets = [];
+    var session = sessions.find(function(s){ return s.id === currentSessionId; });
+    if(session) session.tickets = [];
+    saveData();
+    renderTicketList();
+    updateStats();
+    renderSessions();
+    document.getElementById('deleteModal').classList.remove('show');
+    notify('همه بلیط‌های سانس حذف شد');
+}
+
+// ===== خروجی CSV =====
+function exportCSV(){
+    if(!tickets.length){ notify('داده‌ای نیست'); return; }
+    var session = sessions.find(function(s){ return s.id === currentSessionId; });
+    var sessionName = session ? session.name : '';
+    var headers = ['سانس','شناسه','نام','تعداد','ردیف','صندلی','وضعیت'];
+    var rows = tickets.map(function(t){
+        return [sessionName, t.id, t.name||'', t.ticketCount||1, t.row||'', t.seatNumber||'', t.checked?'چک شده':'چک نشده'];
+    });
+    var csv = '\uFEFF' + headers.join(',') + '\n';
+    rows.forEach(function(r){
+        csv += r.map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(',') + '\n';
+    });
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'tickets_' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function(){ URL.revokeObjectURL(link.href); }, 1000);
+}
+
+// ===== آمار =====
+function updateStats(){
+    document.getElementById('statTotal').textContent = tickets.length;
+    var checked = tickets.filter(function(t){ return t.checked; }).length;
+    document.getElementById('statChecked').textContent = checked;
+    document.getElementById('statRemain').textContent = tickets.length - checked;
+}
+
+// ===== قفل اپلیکیشن =====
+function initLock(){
+    var lockScreen = document.getElementById('lockScreen');
+    var mainApp = document.getElementById('mainApp');
+    var btnBio = document.getElementById('btnBiometric');
+    var inputPass = document.getElementById('lockPassword');
+
+    // بررسی دسترسی بیومتریک
+    if(BiometricAuth && BiometricAuth.checkBiometry){
+        BiometricAuth.checkBiometry().then(function(result){
+            if(result && result.isAvailable){
+                btnBio.style.display = 'inline-flex';
+                // تلاش خودکار
+                setTimeout(function(){ authenticateBio(); }, 400);
             }
+        }).catch(function(e){ console.warn('Biometric check failed:', e); });
+    }
+
+    btnBio.addEventListener('click', authenticateBio);
+    document.getElementById('btnPasswordLogin').addEventListener('click', tryPassword);
+    inputPass.addEventListener('keydown', function(e){ if(e.key === 'Enter') tryPassword(); });
+
+    function tryPassword(){
+        if(inputPass.value.trim() === APP_PASSWORD){
+            unlock();
+        } else {
+            notify('رمز اشتباه است');
+            inputPass.value = '';
+            inputPass.focus();
         }
+    }
 
-        async function loadData() {
-            try {
-                const result = await Filesystem.readFile({
-                    path: STORAGE_KEY,
-                    directory: Directory.Data,
-                    encoding: Encoding.UTF8
-                });
-                const data = JSON.parse(result.data);
-                sessions = data.sessions || [];
-                currentSessionId = data.currentSessionId || null;
-                tickets = data.tickets || [];
-            } catch(e) {
-                // تلاش برای خواندن از localStorage
-                const backup = localStorage.getItem('biliti_backup');
-                if (backup) {
-                    try {
-                        const data = JSON.parse(backup);
-                        sessions = data.sessions || [];
-                        currentSessionId = data.currentSessionId || null;
-                        tickets = data.tickets || [];
-                    } catch(err) { sessions = []; tickets = []; }
-                } else {
-                    sessions = []; tickets = [];
-                }
-            }
-            // اگر بلیط‌های سانس جاری خالی بود ولی سانس‌ها وجود داشت
-            if (!tickets.length && currentSessionId) {
-                const session = sessions.find(s => s.id === currentSessionId);
-                if (session) tickets = session.tickets || [];
-            }
+    function authenticateBio(){
+        if(!BiometricAuth || !BiometricAuth.authenticate){ return; }
+        BiometricAuth.authenticate({
+            reason: 'برای ورود به اپلیکیشن بلیطی',
+            cancelTitle: 'لغو',
+            allowDeviceCredentials: true
+        }).then(function(){ unlock(); })
+          .catch(function(e){ console.warn('Bio auth failed:', e); inputPass.focus(); });
+    }
+
+    function unlock(){
+        lockScreen.style.display = 'none';
+        mainApp.style.display = 'block';
+        startApp();
+    }
+}
+
+// ===== راه‌اندازی اپ =====
+var appStarted = false;
+function startApp(){
+    if(appStarted) return;
+    appStarted = true;
+    loadData(function(){
+        renderSessions();
+        refreshRegisterTab();
+        updateStats();
+    });
+}
+
+// ===== تب‌ها =====
+function switchTab(tab){
+    document.querySelectorAll('.tab-btn').forEach(function(b){
+        b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    document.querySelectorAll('.tab-content').forEach(function(c){
+        c.classList.toggle('active', c.id === 'tab-' + tab);
+    });
+    if(tab === 'check'){ updateStats(); }
+    if(tab === 'register'){ refreshRegisterTab(); }
+    if(tab === 'sessions'){ renderSessions(); }
+}
+
+// ===== اسکنر QR =====
+function requestPermission(){
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        setScanResult('error', '❌', 'پشتیبانی نمی‌شود', 'مرورگر از دوربین پشتیبانی نمی‌کند');
+        return;
+    }
+    setScanResult('', '⏳', 'درخواست مجوز...', 'لطفاً درخواست دسترسی را تأیید کنید');
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(stream){
+            stream.getTracks().forEach(function(t){ t.stop(); });
+            hasPermission = true;
+            document.getElementById('btnRequestPermission').disabled = true;
+            document.getElementById('btnRequestPermission').textContent = '✅ دسترسی داده شد';
+            document.getElementById('btnStartScanner').disabled = false;
+            setScanResult('success', '✅', 'مجوز صادر شد', 'حالا می‌توانید اسکن کنید');
+        })
+        .catch(function(err){
+            hasPermission = false;
+            document.getElementById('btnStartScanner').disabled = true;
+            setScanResult('error', '❌', 'دسترسی رد شد', err.message || 'مجوز دوربین را در تنظیمات فعال کنید');
+        });
+}
+
+function setScanResult(type, icon, title, detail){
+    var el = document.getElementById('scanResult');
+    el.className = 'scan-result' + (type ? ' ' + type : '');
+    el.innerHTML = '<div class="result-row"><span class="result-icon">' + icon + '</span><span>' + title + '</span></div>' +
+        (detail ? '<div class="result-detail">' + detail + '</div>' : '');
+}
+
+function startScanner(){
+    if(!hasPermission){ alert('ابتدا روی «دسترسی دوربین» بزنید'); return; }
+    if(html5QrCode && !isScanning){
+        html5QrCode.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 240, height: 240 } },
+            onScanSuccess,
+            function(){}
+        ).then(function(){
+            isScanning = true;
+            document.getElementById('btnStartScanner').disabled = true;
+            document.getElementById('btnStopScanner').disabled = false;
+            setScanResult('', '🔍', 'دوربین فعال است', 'QR را در کادر قرار دهید');
+        }).catch(function(err){ alert('خطا: ' + err); });
+        return;
+    }
+    try{
+        html5QrCode = new Html5Qrcode('reader');
+        html5QrCode.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 240, height: 240 } },
+            onScanSuccess,
+            function(){}
+        ).then(function(){
+            isScanning = true;
+            document.getElementById('btnStartScanner').disabled = true;
+            document.getElementById('btnStopScanner').disabled = false;
+            setScanResult('', '🔍', 'دوربین فعال است', 'QR را در کادر قرار دهید');
+        }).catch(function(err){ alert('خطا: ' + err); });
+    }catch(e){ alert('خطا در راه‌اندازی: ' + e.message); }
+}
+
+function stopScanner(){
+    if(html5QrCode && isScanning){
+        html5QrCode.stop().then(function(){
+            isScanning = false;
+            document.getElementById('btnStartScanner').disabled = false;
+            document.getElementById('btnStopScanner').disabled = true;
+        }).catch(function(){
+            isScanning = false;
+            document.getElementById('btnStartScanner').disabled = false;
+            document.getElementById('btnStopScanner').disabled = true;
+        });
+    } else {
+        isScanning = false;
+        document.getElementById('btnStartScanner').disabled = false;
+        document.getElementById('btnStopScanner').disabled = true;
+    }
+}
+
+function onScanSuccess(decodedText){
+    stopScanner();
+    // جستجو در همه سانس‌ها
+    var foundTicket = null;
+    var foundSession = null;
+    for(var i=0; i<sessions.length; i++){
+        var s = sessions[i];
+        if(s.tickets){
+            var t = s.tickets.find(function(x){ return x.id === decodedText; });
+            if(t){ foundTicket = t; foundSession = s; break; }
         }
+    }
 
-        // ==================== مدیریت سانس ====================
-        function renderSessions() {
-            const container = document.getElementById('sessionList');
-            if (!sessions.length) {
-                container.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:16px;">هنوز سانسی ایجاد نشده است</div>';
-                document.getElementById('ticketFormCard').style.display = 'none';
-                document.getElementById('ticketListCard').style.display = 'none';
-                return;
-            }
-            let html = '';
-            sessions.forEach(s => {
-                const isActive = s.id === currentSessionId;
-                html += `
-                    <div class="session-item ${isActive ? 'active' : ''}" data-id="${s.id}">
-                        <div class="info">
-                            <div class="name">${escapeHtml(s.name)}</div>
-                            <div class="detail">${s.tickets ? s.tickets.length : 0} بلیط | ${s.date || ''}</div>
-                        </div>
-                        <div class="session-actions">
-                            <button class="btn btn-sm btn-outline select-session" data-id="${s.id}">${isActive ? '✅ فعال' : 'انتخاب'}</button>
-                            <button class="btn btn-sm btn-danger delete-session" data-id="${s.id}">🗑</button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
+    if(!foundTicket){
+        setScanResult('error', '❌', 'بلیط معتبر نیست', 'کد: ' + escapeHtml(decodedText));
+        return;
+    }
 
-            // رویدادها
-            container.querySelectorAll('.select-session').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
-                    selectSession(id);
-                });
-            });
-            container.querySelectorAll('.delete-session').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
-                    deleteSession(id);
-                });
-            });
-        }
+    if(foundTicket.checked){
+        setScanResult('duplicate', '🟡', 'قبلاً چک شده',
+            '<strong>' + escapeHtml(foundTicket.name) + '</strong> | تعداد: ' + (foundTicket.ticketCount||1) +
+            ' | ردیف: ' + escapeHtml(foundTicket.row||'-') + ' | صندلی: ' + escapeHtml(foundTicket.seatNumber||'-') +
+            '<br><span style="color:#92400e;font-size:12px">سانس: ' + escapeHtml(foundSession.name) + '</span>');
+        return;
+    }
 
-        function selectSession(id) {
-            const session = sessions.find(s => s.id === id);
-            if (!session) return;
-            currentSessionId = id;
-            tickets = session.tickets || [];
-            document.getElementById('currentSessionName').textContent = session.name;
-            document.getElementById('ticketFormCard').style.display = 'block';
-            document.getElementById('ticketListCard').style.display = 'block';
-            renderSessions();
-            renderTicketList();
-            updateStats();
-            saveData();
-        }
+    // چک کردن
+    foundTicket.checked = true;
+    saveData();
+    if(foundSession.id === currentSessionId) renderTicketList();
+    renderSessions();
+    updateStats();
 
-        function createSession() {
-            const name = prompt('نام سانس را وارد کنید (مثال: سانس عصر، اکران ویژه)');
-            if (!name || !name.trim()) return;
-            const session = {
-                id: 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-                name: name.trim(),
-                date: new Date().toLocaleDateString('fa-IR'),
-                tickets: [],
-                createdAt: Date.now()
-            };
-            sessions.push(session);
-            saveData();
-            renderSessions();
-            selectSession(session.id);
-        }
+    setScanResult('success', '✅', 'بلیط معتبر است',
+        '<strong>' + escapeHtml(foundTicket.name) + '</strong> | تعداد: ' + (foundTicket.ticketCount||1) +
+        ' | ردیف: ' + escapeHtml(foundTicket.row||'-') + ' | صندلی: ' + escapeHtml(foundTicket.seatNumber||'-') +
+        '<br><span style="color:#166534;font-size:12px;font-weight:700">✔ چک شد — سانس: ' + escapeHtml(foundSession.name) + '</span>');
+    notify('بلیط با موفقیت چک شد', 1500);
+}
 
-        function deleteSession(id) {
-            if (!confirm('این سانس و تمام بلیط‌های آن حذف شود؟')) return;
-            sessions = sessions.filter(s => s.id !== id);
-            if (currentSessionId === id) {
-                currentSessionId = null;
-                tickets = [];
-                document.getElementById('ticketFormCard').style.display = 'none';
-                document.getElementById('ticketListCard').style.display = 'none';
-            }
-            saveData();
-            renderSessions();
-        }
+// ===== رویدادها =====
+function bindEvents(){
+    document.querySelectorAll('.tab-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){ switchTab(this.dataset.tab); });
+    });
 
-        // ==================== بلیط ====================
-        function renderTicketList() {
-            const container = document.getElementById('ticketListContainer');
-            if (!container) return;
-            document.getElementById('ticketCount').textContent = tickets.length;
-            if (!tickets.length) {
-                container.innerHTML = `<div style="text-align:center;color:#94a3b8;padding:20px 0;">هیچ بلیطی ثبت نشده است</div>`;
-                return;
-            }
-            // ... (منطق رندر بلیط‌ها مثل قبل)
-        }
+    document.getElementById('btnNewSession').addEventListener('click', createSession);
+    document.getElementById('btnAddTicket').addEventListener('click', addTicket);
 
-        function addTicket() {
-            if (!currentSessionId) { alert('ابتدا یک سانس انتخاب یا ایجاد کنید'); return; }
-            const name = document.getElementById('inputName').value.trim();
-            const count = parseInt(document.getElementById('inputCount').value) || 1;
-            const row = document.getElementById('inputRow').value.trim();
-            const seat = document.getElementById('inputSeat').value.trim();
-            if (!name) { alert('نام را وارد کنید'); return; }
-            
-            const ticket = {
-                id: 'tkt_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
-                name, ticketCount: count, row: row || '-', seatNumber: seat || '-',
-                checked: false, createdAt: Date.now()
-            };
-            tickets.push(ticket);
-            
-            // به‌روزرسانی سانس جاری
-            const session = sessions.find(s => s.id === currentSessionId);
-            if (session) session.tickets = tickets;
-            
-            saveData();
-            renderTicketList();
-            updateStats();
-            document.getElementById('inputName').value = '';
-            document.getElementById('inputCount').value = '1';
-            document.getElementById('inputRow').value = '';
-            document.getElementById('inputSeat').value = '';
-        }
+    document.getElementById('inputName').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); addTicket(); } });
+    document.getElementById('inputCount').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); addTicket(); } });
+    document.getElementById('inputRow').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); addTicket(); } });
+    document.getElementById('inputSeat').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); addTicket(); } });
 
-        // ==================== قفل و امنیت ====================
-        async function initLock() {
-            const lockScreen = document.getElementById('lockScreen');
-            const mainApp = document.getElementById('mainApp');
+    document.getElementById('btnPrint').addEventListener('click', function(){ window.print(); });
+    document.getElementById('btnExport').addEventListener('click', exportCSV);
+    document.getElementById('btnDeleteAll').addEventListener('click', openDeleteModal);
 
-            // بررسی وجود اثر انگشت
-            try {
-                const result = await BiometricAuth.checkBiometry();
-                if (result.isAvailable) {
-                    document.getElementById('btnBiometric').style.display = 'block';
-                } else {
-                    document.getElementById('btnBiometric').style.display = 'none';
-                }
-            } catch(e) {
-                document.getElementById('btnBiometric').style.display = 'none';
-            }
+    document.getElementById('modalCancel').addEventListener('click', function(){
+        document.getElementById('deleteModal').classList.remove('show');
+    });
+    document.getElementById('modalConfirm').addEventListener('click', confirmDeleteAll);
+    document.getElementById('deletePassword').addEventListener('keydown', function(e){
+        if(e.key === 'Enter') confirmDeleteAll();
+    });
+    document.getElementById('deleteModal').addEventListener('click', function(e){
+        if(e.target === this) this.classList.remove('show');
+    });
 
-            // تلاش برای ورود خودکار با اثر انگشت
-            try {
-                const result = await BiometricAuth.checkBiometry();
-                if (result.isAvailable) {
-                    await authenticateWithBiometric();
-                }
-            } catch(e) { /* ignore */ }
+    document.getElementById('btnRequestPermission').addEventListener('click', requestPermission);
+    document.getElementById('btnStartScanner').addEventListener('click', startScanner);
+    document.getElementById('btnStopScanner').addEventListener('click', stopScanner);
 
-            // دکمه ورود با اثر انگشت
-            document.getElementById('btnBiometric').addEventListener('click', authenticateWithBiometric);
-            
-            // دکمه ورود با رمز
-            document.getElementById('btnPasswordLogin').addEventListener('click', function() {
-                const pass = document.getElementById('lockPassword').value.trim();
-                // رمز پیش‌فرض: 1234 (قابل تغییر)
-                if (pass === '1234' || pass === '123') {
-                    unlockApp();
-                } else {
-                    alert('رمز عبور اشتباه است');
-                    document.getElementById('lockPassword').value = '';
-                }
-            });
+    window.addEventListener('beforeunload', function(){ if(isScanning) stopScanner(); });
+}
 
-            // Enter در فیلد رمز
-            document.getElementById('lockPassword').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') document.getElementById('btnPasswordLogin').click();
-            });
-        }
+// ===== شروع =====
+document.addEventListener('DOMContentLoaded', function(){
+    bindEvents();
+    initLock();
+});
 
-        async function authenticateWithBiometric() {
-            try {
-                await BiometricAuth.authenticate({
-                    reason: 'برای ورود به اپلیکیشن بلیطی',
-                    cancelTitle: 'لغو',
-                    allowDeviceCredentials: true
-                });
-                unlockApp();
-            } catch(e) {
-                console.warn('Biometric auth failed:', e);
-                // نمایش پیام خطا
-                if (e.code === 'userCancel' || e.code === 'userFallback') {
-                    // کاربر لغو کرد یا از رمز استفاده کرد
-                    document.getElementById('lockPassword').focus();
-                }
-            }
-        }
-
-        function unlockApp() {
-            document.getElementById('lockScreen').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            // بارگذاری داده‌ها
-            initApp();
-        }
-
-        // ==================== راه‌اندازی ====================
-        async function initApp() {
-            await loadData();
-            renderSessions();
-            
-            // اگر سانس فعال وجود داشت، انتخابش کن
-            if (currentSessionId) {
-                const session = sessions.find(s => s.id === currentSessionId);
-                if (session) {
-                    tickets = session.tickets || [];
-                    document.getElementById('currentSessionName').textContent = session.name;
-                    document.getElementById('ticketFormCard').style.display = 'block';
-                    document.getElementById('ticketListCard').style.display = 'block';
-                    renderTicketList();
-                    updateStats();
-                }
-            }
-            
-            // رویدادها
-            document.getElementById('btnNewSession').addEventListener('click', createSession);
-            document.getElementById('btnAddTicket').addEventListener('click', addTicket);
-            // ... سایر رویدادها
-        }
-
-        // شروع
-        initLock();
-    </script>
+})();
+</script>
 </body>
 </html>
