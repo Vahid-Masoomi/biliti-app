@@ -44,6 +44,164 @@ jobs:
       - name: 📋 Copy Web Assets
         run: npx cap copy android
 
+      - name: 🔐 Add Permissions to AndroidManifest
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          echo "قبل از تغییرات:"
+          cat "$MANIFEST"
+          
+          # اضافه کردن مجوزها قبل از </manifest>
+          if ! grep -q "android.permission.CAMERA" "$MANIFEST"; then
+            python3 << 'PYEOF'
+import re
+manifest_path = "android/app/src/main/AndroidManifest.xml"
+with open(manifest_path, 'r', encoding='utf-8') as f:
+    content = f.read()
+
+# اضافه کردن مجوزها
+permissions = '''
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.fingerprint" android:required="false" />
+'''
+
+if 'android.permission.CAMERA' not in content:
+    content = content.replace('</manifest>', permissions + '</manifest>')
+
+# اضافه کردن windowSoftInputMode به activity
+if 'windowSoftInputMode' not in content:
+    content = content.replace(
+        'android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"',
+        'android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"\n            android:windowSoftInputMode="adjustResize"'
+    )
+
+with open(manifest_path, 'w', encoding='utf-8') as f:
+    f.write(content)
+print("AndroidManifest.xml updated")
+PYEOF
+          fi
+          
+          echo "بعد از تغییرات:"
+          cat "$MANIFEST"
+
+      - name: 🎯 Overwrite MainActivity.java
+        run: |
+          mkdir -p android/app/src/main/java/ir/vahidmsm/biliti
+          cat > android/app/src/main/java/ir/vahidmsm/biliti/MainActivity.java << 'JAVAEOF'
+package ir.vahidmsm.biliti;
+
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.View;
+import android.view.WindowManager;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {
+
+    private static final int CAMERA_PERMISSION_CODE = 100;
+    private PermissionRequest pendingRequest;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // تنظیم حالت کیبورد
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+
+        // درخواست مجوز دوربین از ابتدا
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.CAMERA},
+                    CAMERA_PERMISSION_CODE);
+        }
+
+        WebView webView = getBridge().getWebView();
+        WebSettings settings = webView.getSettings();
+        settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setJavaScriptEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setLoadWithOverviewMode(true);
+        settings.setUseWideViewPort(true);
+        settings.setSupportZoom(false);
+
+        webView.setFocusable(true);
+        webView.setFocusableInTouchMode(true);
+        webView.requestFocus(View.FOCUS_DOWN);
+
+        // WebChromeClient برای مدیریت مجوز دوربین
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean wantsCamera = false;
+                        for (String resource : request.getResources()) {
+                            if (resource.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
+                                wantsCamera = true;
+                                break;
+                            }
+                        }
+
+                        if (wantsCamera) {
+                            if (ContextCompat.checkSelfPermission(MainActivity.this,
+                                    Manifest.permission.CAMERA)
+                                    == PackageManager.PERMISSION_GRANTED) {
+                                request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                            } else {
+                                pendingRequest = request;
+                                ActivityCompat.requestPermissions(MainActivity.this,
+                                        new String[]{Manifest.permission.CAMERA},
+                                        CAMERA_PERMISSION_CODE);
+                            }
+                        } else {
+                            request.deny();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (pendingRequest != null) {
+                    pendingRequest.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                    pendingRequest = null;
+                }
+            } else {
+                if (pendingRequest != null) {
+                    pendingRequest.deny();
+                    pendingRequest = null;
+                }
+            }
+        }
+    }
+}
+JAVAEOF
+          echo "MainActivity.java created"
+
       - name: 🔑 Grant execute permission for gradlew
         run: chmod +x android/gradlew
 
